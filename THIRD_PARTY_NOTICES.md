@@ -25,6 +25,9 @@ Python distribution's pywebview dist-info license/metadata files. pythonnet,
 clr-loader, Bottle and proxy-tools retain their respective bundled notices.
 Windows uses the separately installed Microsoft WebView2 runtime.
 
-Mac builds include the Playwright Chromium distribution and its associated
-third-party notices inside Contents/Resources/Browser. Python and other bundled
-dependencies retain their licenses within the private Runtime directory.
+Desktop installers do not bundle Chromium. The optional browser component is
+downloaded through Playwright into the user's application data directory and
+retains the Chromium distribution's associated third-party notices. Existing
+compatible Chrome or Edge installations retain their own licenses and notices.
+Python and other bundled dependencies retain their licenses within the private
+Runtime directory.
