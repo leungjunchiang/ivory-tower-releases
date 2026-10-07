@@ -40,6 +40,7 @@ MB 按 1,000,000 字节计算，SHA-256 见随附 `SHA256SUMS.txt`。Windows 安
 - Windows 安装器未签名；macOS 使用 ad-hoc 签名，没有 Apple Developer 分发证书，也未完成 Apple 公证。
 
 
+
 ## 公开下载核验
 
 - 未登录访问核验时间：`2026-10-07T13:22:26Z`。Release 页面返回 HTTP 200。
@@ -56,4 +57,5 @@ MB 按 1,000,000 字节计算，SHA-256 见随附 `SHA256SUMS.txt`。Windows 安
 | `THIRD_PARTY_NOTICES.md` | 200 | 1,606 | `a0bcf9d8853549dc7df8e853afd9fbb0b51e152c5cb422a275a8cb2d89e6f970` |
 | `update.json` | 200 | 1,356 | `1b29fe8463ef14722e87671289fa2496c93dd303486aa77fa9b1522538b12221` |
 | `UserGuide.md` | 200 | 4,402 | `5ce475060296c1634eb0054300733f366b336847a71d19f4371198ee1e553d11` |
-| `ValidationReport.md` | 200 | 3,555 | `db461b02208961a4b1befa2af97670c2e41015736c6ec9e0f64c1a3fbe9f97ad` |
+
+- 本报告本身不在上表列出，避免自引用；最终文件的大小与 SHA-256 由 `SHA256SUMS.txt` 记录，并在报告更新后再次匿名核验。
