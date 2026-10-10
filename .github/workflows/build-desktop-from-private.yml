@@ -172,27 +172,27 @@ jobs:
         env:
           VERSION_TAG: ${{ inputs.source_tag }}
         run: |
-          VERSION="\${VERSION_TAG#v}"
+          VERSION="${VERSION_TAG#v}"
           mkdir -p release-assets/publish
-          WINDOWS_EXE=(release-assets/windows/象牙塔-安装程序-"\${VERSION}".exe)
+          WINDOWS_EXE=(release-assets/windows/象牙塔-安装程序-"${VERSION}".exe)
           ARM_DMG=(release-assets/macos-arm64/*.dmg)
           INTEL_DMG=(release-assets/macos-x64/*.dmg)
-          if [[ "\${#WINDOWS_EXE[@]}" -ne 1 || ! -f "\${WINDOWS_EXE[0]}" ]]; then
+          if [[ "${#WINDOWS_EXE[@]}" -ne 1 || ! -f "${WINDOWS_EXE[0]}" ]]; then
             echo "Expected exactly one Windows installer." >&2; exit 1
           fi
-          if [[ "\${#ARM_DMG[@]}" -ne 1 || ! -f "\${ARM_DMG[0]}" ]]; then
+          if [[ "${#ARM_DMG[@]}" -ne 1 || ! -f "${ARM_DMG[0]}" ]]; then
             echo "Expected exactly one Apple Silicon DMG." >&2; exit 1
           fi
-          if [[ "\${#INTEL_DMG[@]}" -ne 1 || ! -f "\${INTEL_DMG[0]}" ]]; then
+          if [[ "${#INTEL_DMG[@]}" -ne 1 || ! -f "${INTEL_DMG[0]}" ]]; then
             echo "Expected exactly one Intel DMG." >&2; exit 1
           fi
-          cp "\${WINDOWS_EXE[0]}" "release-assets/publish/IvoryTower-Windows-x64-Setup-\${VERSION}.exe"
+          cp "${WINDOWS_EXE[0]}" "release-assets/publish/IvoryTower-Windows-x64-Setup-${VERSION}.exe"
           cp release-assets/macos-arm64/*.app.zip release-assets/publish/
-          cp "\${ARM_DMG[0]}" "release-assets/publish/IvoryTower-macOS-arm64-\${VERSION}.dmg"
+          cp "${ARM_DMG[0]}" "release-assets/publish/IvoryTower-macOS-arm64-${VERSION}.dmg"
           cp release-assets/macos-x64/*.app.zip release-assets/publish/
-          cp "\${INTEL_DMG[0]}" "release-assets/publish/IvoryTower-macOS-x64-\${VERSION}.dmg"
-          python source/packaging/make-manifest.py release-assets/publish --version "\${VERSION}"
-          python - "\${VERSION}" <<'PY'
+          cp "${INTEL_DMG[0]}" "release-assets/publish/IvoryTower-macOS-x64-${VERSION}.dmg"
+          python source/packaging/make-manifest.py release-assets/publish --version "${VERSION}"
+          python - "${VERSION}" <<'PY'
           from pathlib import Path
           import sys
           version = sys.argv[1]
