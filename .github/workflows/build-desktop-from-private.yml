@@ -13,7 +13,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: desktop-release-\${{ inputs.source_tag }}
+  group: desktop-release-${{ inputs.source_tag }}
   cancel-in-progress: false
 
 jobs:
@@ -24,18 +24,16 @@ jobs:
       - name: Validate source tag
         shell: pwsh
         env:
-          SOURCE_TAG: \${{ inputs.source_tag }}
+          SOURCE_TAG: ${{ inputs.source_tag }}
+          SOURCE_REPO_READ_TOKEN: ${{ secrets.SOURCE_REPO_READ_TOKEN }}
         run: |
-          if ($env:SOURCE_TAG -notmatch '^v\d+\.\d+\.\d+$') { throw 'source_tag must look like v0.4.28' }
-          if ([string]::IsNullOrWhiteSpace($env:SOURCE_REPO_READ_TOKEN)) { throw 'Configure SOURCE_REPO_READ_TOKEN in this public repository before building.' }
-        env:
-          SOURCE_REPO_READ_TOKEN: \${{ secrets.SOURCE_REPO_READ_TOKEN }}
+          if ($env:SOURCE_TAG -notmatch '^v\d+\.\d+\.\d+
 
       - uses: actions/checkout@v7
         with:
           repository: leungjunchiang/ivory-tower
-          ref: \${{ inputs.source_tag }}
-          token: \${{ secrets.SOURCE_REPO_READ_TOKEN }}
+          ref: ${{ inputs.source_tag }}
+          token: ${{ secrets.SOURCE_REPO_READ_TOKEN }}
           path: source
           persist-credentials: false
 
@@ -47,7 +45,7 @@ jobs:
         working-directory: source
         shell: pwsh
         env:
-          UV_PYTHON_INSTALL_DIR: \${{ github.workspace }}/.runtime
+          UV_PYTHON_INSTALL_DIR: ${{ github.workspace }}/.runtime
         run: |
           uv python install 3.13
           uv venv --python 3.13 .venv
@@ -79,7 +77,7 @@ jobs:
           if-no-files-found: error
 
   macos:
-    runs-on: \${{ matrix.runner }}
+    runs-on: ${{ matrix.runner }}
     timeout-minutes: 60
     strategy:
       fail-fast: false
@@ -88,8 +86,8 @@ jobs:
     steps:
       - name: Validate source tag
         env:
-          SOURCE_TAG: \${{ inputs.source_tag }}
-          SOURCE_REPO_READ_TOKEN: \${{ secrets.SOURCE_REPO_READ_TOKEN }}
+          SOURCE_TAG: ${{ inputs.source_tag }}
+          SOURCE_REPO_READ_TOKEN: ${{ secrets.SOURCE_REPO_READ_TOKEN }}
         run: |
           [[ "$SOURCE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "source_tag must look like v0.4.28" >&2; exit 1; }
           [[ -n "$SOURCE_REPO_READ_TOKEN" ]] || { echo "Configure SOURCE_REPO_READ_TOKEN in this public repository before building." >&2; exit 1; }
@@ -97,8 +95,8 @@ jobs:
       - uses: actions/checkout@v7
         with:
           repository: leungjunchiang/ivory-tower
-          ref: \${{ inputs.source_tag }}
-          token: \${{ secrets.SOURCE_REPO_READ_TOKEN }}
+          ref: ${{ inputs.source_tag }}
+          token: ${{ secrets.SOURCE_REPO_READ_TOKEN }}
           path: source
           persist-credentials: false
 
@@ -109,7 +107,7 @@ jobs:
       - name: Install private native runtime and dependencies
         working-directory: source
         env:
-          UV_PYTHON_INSTALL_DIR: \${{ github.workspace }}/.runtime
+          UV_PYTHON_INSTALL_DIR: ${{ github.workspace }}/.runtime
         run: |
           uv python install 3.13
           uv venv --python 3.13 .venv
@@ -128,7 +126,7 @@ jobs:
 
       - uses: actions/upload-artifact@v7
         with:
-          name: ivory-tower-\${{ matrix.runner }}
+          name: ivory-tower-${{ matrix.runner }}
           path: source/release/macos/*
           compression-level: 0
           if-no-files-found: error
@@ -142,8 +140,8 @@ jobs:
     steps:
       - name: Validate source tag and read token
         env:
-          SOURCE_TAG: \${{ inputs.source_tag }}
-          SOURCE_REPO_READ_TOKEN: \${{ secrets.SOURCE_REPO_READ_TOKEN }}
+          SOURCE_TAG: ${{ inputs.source_tag }}
+          SOURCE_REPO_READ_TOKEN: ${{ secrets.SOURCE_REPO_READ_TOKEN }}
         run: |
           [[ "$SOURCE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "source_tag must look like v0.4.28" >&2; exit 1; }
           [[ -n "$SOURCE_REPO_READ_TOKEN" ]] || { echo "Configure SOURCE_REPO_READ_TOKEN in this public repository before building." >&2; exit 1; }
@@ -151,8 +149,8 @@ jobs:
       - uses: actions/checkout@v7
         with:
           repository: leungjunchiang/ivory-tower
-          ref: \${{ inputs.source_tag }}
-          token: \${{ secrets.SOURCE_REPO_READ_TOKEN }}
+          ref: ${{ inputs.source_tag }}
+          token: ${{ secrets.SOURCE_REPO_READ_TOKEN }}
           path: source
           persist-credentials: false
 
@@ -162,16 +160,16 @@ jobs:
           path: release-assets/windows
       - uses: actions/download-artifact@v7
         with:
-          name: ivory-tower-macos-macos-14
+          name: ivory-tower-macos-14
           path: release-assets/macos-arm64
       - uses: actions/download-artifact@v7
         with:
-          name: ivory-tower-macos-macos-15-intel
+          name: ivory-tower-macos-15-intel
           path: release-assets/macos-x64
 
       - name: Assemble installers, app update packages, manifest and checksums
         env:
-          VERSION: \${{ inputs.source_tag }}
+          VERSION: ${{ inputs.source_tag }}
         run: |
           VERSION="\${VERSION#v}"
           mkdir -p release-assets/publish
@@ -209,9 +207,199 @@ jobs:
 
       - name: Publish complete release to this public repository
         env:
-          GH_TOKEN: \${{ github.token }}
+          GH_TOKEN: ${{ github.token }}
         run: |
-          TAG="\${{ inputs.source_tag }}"
+          TAG="${{ inputs.source_tag }}"
+          REPO='leungjunchiang/ivory-tower-releases'
+          if ! gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then
+            gh release create "$TAG" --repo "$REPO" --target main --title "象牙塔 $TAG" --notes-file release-notes.md --draft
+          fi
+          gh release upload "$TAG" release-assets/publish/* --repo "$REPO" --clobber
+          gh release edit "$TAG" --repo "$REPO" --draft=false
+) { throw 'source_tag must look like v0.4.28' }
+          if ([string]::IsNullOrWhiteSpace($env:SOURCE_REPO_READ_TOKEN)) { throw 'Configure SOURCE_REPO_READ_TOKEN in this public repository before building.' }
+
+      - uses: actions/checkout@v7
+        with:
+          repository: leungjunchiang/ivory-tower
+          ref: ${{ inputs.source_tag }}
+          token: ${{ secrets.SOURCE_REPO_READ_TOKEN }}
+          path: source
+          persist-credentials: false
+
+      - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4
+        with:
+          version: "0.12.3"
+
+      - name: Install private runtime and dependencies
+        working-directory: source
+        shell: pwsh
+        env:
+          UV_PYTHON_INSTALL_DIR: ${{ github.workspace }}/.runtime
+        run: |
+          uv python install 3.13
+          uv venv --python 3.13 .venv
+          uv pip install --python .venv/Scripts/python.exe -r packaging/requirements-runtime.txt -r packaging/requirements-desktop.txt
+
+      - name: Run tests and build Windows installer
+        working-directory: source
+        shell: pwsh
+        run: |
+          .venv/Scripts/python.exe -m unittest discover -s site/tests
+          $env:PYTHONPATH = "$PWD/we-mp-rss"
+          .venv/Scripts/python.exe -m unittest discover -s we-mp-rss/tests -p 'test_cabinet_accounts.py'
+          .venv/Scripts/python.exe -m unittest discover -s we-mp-rss/tests -p 'test_content_fetch_queue.py'
+          .venv/Scripts/python.exe -m unittest discover -s we-mp-rss/tests -p 'test_article_content_cache_api.py'
+          .venv/Scripts/python.exe -m unittest discover -s packaging/tests
+          $runtimePath = (.venv/Scripts/python.exe -c 'import sys; print(sys.base_prefix)').Trim()
+          ./packaging/build-release.ps1 -PythonHome $runtimePath -SitePackages .venv/Lib/site-packages
+          packaging/.build/payload/Runtime/python.exe packaging/smoke-native.py packaging/.build/payload/App packaging/.build/native-smoke
+          $installer = Get-ChildItem -LiteralPath release -Filter '象牙塔-安装程序-*.exe' | Select-Object -First 1
+          if ($null -eq $installer) { throw 'Windows installer was not produced.' }
+          .venv/Scripts/python.exe packaging/smoke-installer.py $installer.FullName --native
+          .venv/Scripts/python.exe packaging/smoke-component.py
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ivory-tower-windows-x64
+          path: source/release/*
+          compression-level: 0
+          if-no-files-found: error
+
+  macos:
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [macos-14, macos-15-intel]
+    steps:
+      - name: Validate source tag
+        env:
+          SOURCE_TAG: ${{ inputs.source_tag }}
+          SOURCE_REPO_READ_TOKEN: ${{ secrets.SOURCE_REPO_READ_TOKEN }}
+        run: |
+          [[ "$SOURCE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "source_tag must look like v0.4.28" >&2; exit 1; }
+          [[ -n "$SOURCE_REPO_READ_TOKEN" ]] || { echo "Configure SOURCE_REPO_READ_TOKEN in this public repository before building." >&2; exit 1; }
+
+      - uses: actions/checkout@v7
+        with:
+          repository: leungjunchiang/ivory-tower
+          ref: ${{ inputs.source_tag }}
+          token: ${{ secrets.SOURCE_REPO_READ_TOKEN }}
+          path: source
+          persist-credentials: false
+
+      - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4
+        with:
+          version: "0.12.3"
+
+      - name: Install private native runtime and dependencies
+        working-directory: source
+        env:
+          UV_PYTHON_INSTALL_DIR: ${{ github.workspace }}/.runtime
+        run: |
+          uv python install 3.13
+          uv venv --python 3.13 .venv
+          uv pip install --python .venv/bin/python -r packaging/requirements-runtime.txt -r packaging/requirements-desktop.txt
+
+      - name: Run tests and build native DMG
+        working-directory: source
+        run: |
+          .venv/bin/python -m unittest discover -s site/tests
+          PYTHONPATH=we-mp-rss .venv/bin/python -m unittest discover -s we-mp-rss/tests -p 'test_cabinet_accounts.py'
+          PYTHONPATH=we-mp-rss .venv/bin/python -m unittest discover -s we-mp-rss/tests -p 'test_content_fetch_queue.py'
+          PYTHONPATH=we-mp-rss .venv/bin/python -m unittest discover -s we-mp-rss/tests -p 'test_article_content_cache_api.py'
+          .venv/bin/python -m unittest discover -s packaging/tests
+          .venv/bin/python packaging/build-macos.py
+          .venv/bin/python packaging/smoke-component.py
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ivory-tower-${{ matrix.runner }}
+          path: source/release/macos/*
+          compression-level: 0
+          if-no-files-found: error
+
+  publish:
+    needs: [windows, macos]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    steps:
+      - name: Validate source tag and read token
+        env:
+          SOURCE_TAG: ${{ inputs.source_tag }}
+          SOURCE_REPO_READ_TOKEN: ${{ secrets.SOURCE_REPO_READ_TOKEN }}
+        run: |
+          [[ "$SOURCE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "source_tag must look like v0.4.28" >&2; exit 1; }
+          [[ -n "$SOURCE_REPO_READ_TOKEN" ]] || { echo "Configure SOURCE_REPO_READ_TOKEN in this public repository before building." >&2; exit 1; }
+
+      - uses: actions/checkout@v7
+        with:
+          repository: leungjunchiang/ivory-tower
+          ref: ${{ inputs.source_tag }}
+          token: ${{ secrets.SOURCE_REPO_READ_TOKEN }}
+          path: source
+          persist-credentials: false
+
+      - uses: actions/download-artifact@v7
+        with:
+          name: ivory-tower-windows-x64
+          path: release-assets/windows
+      - uses: actions/download-artifact@v7
+        with:
+          name: ivory-tower-macos-14
+          path: release-assets/macos-arm64
+      - uses: actions/download-artifact@v7
+        with:
+          name: ivory-tower-macos-15-intel
+          path: release-assets/macos-x64
+
+      - name: Assemble installers, app update packages, manifest and checksums
+        env:
+          VERSION: ${{ inputs.source_tag }}
+        run: |
+          VERSION="\${VERSION#v}"
+          mkdir -p release-assets/publish
+          WINDOWS_EXE=(release-assets/windows/象牙塔-安装程序-"\${VERSION}".exe)
+          ARM_DMG=(release-assets/macos-arm64/*.dmg)
+          INTEL_DMG=(release-assets/macos-x64/*.dmg)
+          if [[ "\${#WINDOWS_EXE[@]}" -ne 1 || ! -f "\${WINDOWS_EXE[0]}" ]]; then
+            echo "Expected exactly one Windows installer." >&2; exit 1
+          fi
+          if [[ "\${#ARM_DMG[@]}" -ne 1 || ! -f "\${ARM_DMG[0]}" ]]; then
+            echo "Expected exactly one Apple Silicon DMG." >&2; exit 1
+          fi
+          if [[ "\${#INTEL_DMG[@]}" -ne 1 || ! -f "\${INTEL_DMG[0]}" ]]; then
+            echo "Expected exactly one Intel DMG." >&2; exit 1
+          fi
+          cp "\${WINDOWS_EXE[0]}" "release-assets/publish/IvoryTower-Windows-x64-Setup-\${VERSION}.exe"
+          cp release-assets/macos-arm64/*.app.zip release-assets/publish/
+          cp "\${ARM_DMG[0]}" "release-assets/publish/IvoryTower-macOS-arm64-\${VERSION}.dmg"
+          cp release-assets/macos-x64/*.app.zip release-assets/publish/
+          cp "\${INTEL_DMG[0]}" "release-assets/publish/IvoryTower-macOS-x64-\${VERSION}.dmg"
+          python source/packaging/make-manifest.py release-assets/publish --version "\${VERSION}"
+          python - "\${VERSION}" <<'PY'
+          from pathlib import Path
+          import sys
+          version = sys.argv[1]
+          changelog = Path('source/site/CHANGELOG.md').read_text(encoding='utf-8')
+          heading = f'## {version} · '
+          start = changelog.find(heading)
+          if start < 0:
+              raise SystemExit(f'No changelog section for {version}')
+          start = changelog.find('\n', start) + 1
+          end = changelog.find('\n## ', start)
+          Path('release-notes.md').write_text(changelog[start:end if end >= 0 else None].strip() + '\n', encoding='utf-8')
+          PY
+
+      - name: Publish complete release to this public repository
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${{ inputs.source_tag }}"
           REPO='leungjunchiang/ivory-tower-releases'
           if ! gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then
             gh release create "$TAG" --repo "$REPO" --target main --title "象牙塔 $TAG" --notes-file release-notes.md --draft
