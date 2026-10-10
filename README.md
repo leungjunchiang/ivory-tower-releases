@@ -29,4 +29,4 @@ Windows 安装器未签名；macOS 使用 ad-hoc 签名，没有 Apple Developer
 
 Google Scholar 主页必须公开后才能匿名读取；微博、小红书和其它学术主页只按公开访客可见范围采集。公众号历史内容取决于用户本人在象牙塔内完成的授权通道及其可见范围。平台访问限制可能使资料不完整，软件不尝试绕过限制。
 
-[使用说明](使用说明.md) · [验证记录](ValidationReport.md) · [第三方声明](THIRD_PARTY_NOTICES.md) · [许可](LICENSE)
+[使用说明](使用说明.md) · [验证记录](ValidationReport.md) · [第三方声明](THIRD_PARTY_NOTICES.md) · [许可](LICENSE) · [从私有源码构建桌面版](BUILDING.md)
