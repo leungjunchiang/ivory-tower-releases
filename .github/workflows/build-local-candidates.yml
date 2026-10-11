@@ -1,0 +1,87 @@
+name: Build encrypted local candidates
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_sha:
+        description: Private source commit SHA (no release or tag)
+        required: true
+        type: string
+      recipient:
+        description: Base64 recipient RSA public key (private key stays local)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: local-candidates-${{ inputs.source_sha }}
+  cancel-in-progress: false
+
+jobs:
+  macos:
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [macos-14, macos-15-intel]
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 60
+    env:
+      PYTHONUTF8: '1'
+      CENTURY_CABINET_RELEASE: '1'
+    steps:
+      - name: Validate build-only inputs
+        env:
+          SOURCE_SHA: ${{ inputs.source_sha }}
+          SOURCE_REPO_READ_TOKEN: ${{ secrets.SOURCE_REPO_READ_TOKEN }}
+          RECIPIENT: ${{ inputs.recipient }}
+        run: |
+          [[ "$SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]] || exit 1
+          [[ -n "$SOURCE_REPO_READ_TOKEN" && -n "$RECIPIENT" ]] || exit 1
+
+      - uses: actions/checkout@v7
+        with:
+          repository: leungjunchiang/ivory-tower
+          ref: ${{ inputs.source_sha }}
+          token: ${{ secrets.SOURCE_REPO_READ_TOKEN }}
+          path: source
+          persist-credentials: false
+
+      - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4
+        with:
+          version: '0.12.3'
+
+      - name: Install native runtime dependencies
+        working-directory: source
+        env:
+          UV_PYTHON_INSTALL_DIR: ${{ github.workspace }}/.runtime
+        run: |
+          uv python install 3.13
+          uv venv --python 3.13 .venv
+          uv pip install --python .venv/bin/python -r packaging/requirements-runtime.txt -r packaging/requirements-desktop.txt
+
+      - name: Test and build complete native DMG
+        working-directory: source
+        run: |
+          .venv/bin/python -m unittest discover -s site/tests
+          PYTHONPATH=we-mp-rss .venv/bin/python -m unittest discover -s we-mp-rss/tests
+          .venv/bin/python -m unittest discover -s packaging/tests
+          .venv/bin/python packaging/build-macos.py
+          .venv/bin/python packaging/smoke-component.py
+
+      - name: Encrypt candidates for local recipient
+        working-directory: source
+        env:
+          CANDIDATE_RECIPIENT: ${{ inputs.recipient }}
+        run: |
+          mkdir -p ../encrypted
+          .venv/bin/python packaging/candidate_crypto.py encrypt --input release/macos --output ../encrypted/${{ matrix.runner }}.candidate.enc
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: encrypted-candidate-${{ matrix.runner }}
+          path: encrypted/*.candidate.enc
+          retention-days: 1
+          compression-level: 0
+          if-no-files-found: error
